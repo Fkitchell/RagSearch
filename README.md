@@ -8,20 +8,20 @@ RAG search API in .NET on Azure: Container Apps, Cosmos DB vector search, pgvect
 
 RagSearch is the retrieval layer of a retrieval-augmented generation (RAG) system. It ingests documents, generates embeddings, and returns the most relevant passages for a natural-language query, with optional metadata filters. New and updated documents flow through an event-driven pipeline, so search results stay current without manual reindexing.
 
-## Architecture
+## Architecture (items with a * are planned but not worked on yet)
 
 ```mermaid
 flowchart LR
-    Client -->|search| API[ASP.NET Core API<br/>Container Apps]
+    *Client -->|search| API[ASP.NET Core API<br/>Container Apps]
     API --> Redis[(Azure Managed Redis<br/>cache)]
     API --> Cosmos[(Cosmos DB for NoSQL<br/>vector search)]
     API --> PG[(PostgreSQL + pgvector<br/>filtered search)]
-    Client -->|upload| SB[[Service Bus queue]]
-    SB --> Fn[Ingestion Function]
-    Fn -->|embeddings| Cosmos
-    Fn --> PG
-    Cosmos -->|change feed| Inval[Cache invalidation]
-    Inval --> Redis
+    *Client -->|upload| SB[[Service Bus queue]]
+    *SB --> Fn[Ingestion Function]
+    *Fn -->|embeddings| Cosmos
+    *Fn --> PG
+    *Cosmos -->|change feed| Inval[Cache invalidation]
+    *Inval --> Redis
 ```
 
 Every service authenticates with managed identity. Secrets live in Key Vault, settings in App Configuration, and all components emit OpenTelemetry traces to Application Insights.
@@ -38,15 +38,15 @@ Every service authenticates with managed identity. Secrets live in Key Vault, se
 - [ ] Managed identity, Key Vault, and App Configuration (no secrets in config)
 - [ ] OpenTelemetry tracing across all services, with KQL queries below
 
-## Design decisions
+## Design decisions 
 
 Each section records what I chose (as they come up), what I rejected, and the trade-off I accepted.
 
-### Cosmos DB partition key
+### Cosmos DB partition key 
 <!-- Chosen key, expected access pattern, why it avoids hot partitions, what queries become cross-partition. -->
 
 ### Why both Cosmos DB and pgvector
-An opportunity to learn on both systems, understand tradeoffs and where both options outpreform the other. 
+An opportunity to learn on both systems, understand tradeoffs and where both options outperform the other. 
 
 ### Cache invalidation through the change feed
 <!-- Why event-driven invalidation instead of TTL alone; how stale reads are bounded. -->
@@ -71,12 +71,8 @@ Prerequisites: .NET SDK, Docker, and the Azure CLI.
 ## Deploying to Azure
 
 <!-- Infrastructure steps or IaC commands. -->
+Currently I have a manual deployment process, which will be moved to a CI/CD pipeline in GitHub Actions when the process is more mature.
 
-To avoid ongoing charges, delete the resource group when you're done:
-
-```bash
-az group delete --name <resource-group> --yes
-```
 
 ## Observability
 
