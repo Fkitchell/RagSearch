@@ -1,0 +1,144 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.48.1.52935",
+      "templateHash": "17018397259258355548"
+    }
+  },
+  "variables": {
+    "location": "[resourceGroup().location]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2020-10-01",
+      "name": "RagSearchLogAnalyticsWorkspace",
+      "location": "[variables('location')]",
+      "properties": {
+        "sku": {
+          "name": "pergb2018"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.ContainerRegistry/registries",
+      "apiVersion": "2021-09-01",
+      "name": "[format('ragsearch{0}', uniqueString(resourceGroup().id))]",
+      "location": "[variables('location')]",
+      "sku": {
+        "name": "Basic"
+      },
+      "properties": {
+        "adminUserEnabled": false
+      }
+    },
+    {
+      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "apiVersion": "2018-11-30",
+      "name": "RagSearch_MI",
+      "location": "[variables('location')]"
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.ContainerRegistry/registries', format('ragsearch{0}', uniqueString(resourceGroup().id)))]",
+      "name": "[guid(resourceId('Microsoft.ContainerRegistry/registries', format('ragsearch{0}', uniqueString(resourceGroup().id))), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'RagSearch_MI'), 'acrpull')]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')]",
+        "principalType": "ServicePrincipal",
+        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'RagSearch_MI'), '2018-11-30').principalId]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ContainerRegistry/registries', format('ragsearch{0}', uniqueString(resourceGroup().id)))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'RagSearch_MI')]"
+      ]
+    },
+    {
+      "type": "Microsoft.App/managedEnvironments",
+      "apiVersion": "2022-03-01",
+      "name": "RagSearchContainerAppEnv",
+      "location": "[variables('location')]",
+      "properties": {
+        "appLogsConfiguration": {
+          "destination": "log-analytics",
+          "logAnalyticsConfiguration": {
+            "customerId": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', 'RagSearchLogAnalyticsWorkspace'), '2020-10-01').customerId]",
+            "sharedKey": "[listKeys(resourceId('Microsoft.OperationalInsights/workspaces', 'RagSearchLogAnalyticsWorkspace'), '2020-10-01').primarySharedKey]"
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', 'RagSearchLogAnalyticsWorkspace')]"
+      ]
+    },
+    {
+      "type": "Microsoft.App/containerApps",
+      "apiVersion": "2022-03-01",
+      "name": "ragsearch-api",
+      "location": "[variables('location')]",
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'RagSearch_MI'))]": {}
+        }
+      },
+      "properties": {
+        "managedEnvironmentId": "[resourceId('Microsoft.App/managedEnvironments', 'RagSearchContainerAppEnv')]",
+        "configuration": {
+          "ingress": {
+            "external": true,
+            "targetPort": 8080
+          },
+          "registries": [
+            {
+              "server": "[reference(resourceId('Microsoft.ContainerRegistry/registries', format('ragsearch{0}', uniqueString(resourceGroup().id))), '2021-09-01').loginServer]",
+              "identity": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'RagSearch_MI')]"
+            }
+          ]
+        },
+        "template": {
+          "scale": {
+            "maxReplicas": 5,
+            "minReplicas": 0,
+            "rules": [
+              {
+                "name": "http-scale-rule",
+                "http": {
+                  "metadata": {
+                    "concurrentRequests": "50"
+                  }
+                }
+              }
+            ]
+          },
+          "containers": [
+            {
+              "name": "ragsearch-container",
+              "image": "mcr.microsoft.com/k8se/quickstart:latest",
+              "probes": [
+                {
+                  "type": "Liveness",
+                  "httpGet": {
+                    "path": "api/health",
+                    "port": 8080
+                  },
+                  "initialDelaySeconds": 7,
+                  "periodSeconds": 3
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.App/managedEnvironments', 'RagSearchContainerAppEnv')]",
+        "[resourceId('Microsoft.ContainerRegistry/registries', format('ragsearch{0}', uniqueString(resourceGroup().id)))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'RagSearch_MI')]",
+        "[extensionResourceId(resourceId('Microsoft.ContainerRegistry/registries', format('ragsearch{0}', uniqueString(resourceGroup().id))), 'Microsoft.Authorization/roleAssignments', guid(resourceId('Microsoft.ContainerRegistry/registries', format('ragsearch{0}', uniqueString(resourceGroup().id))), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'RagSearch_MI'), 'acrpull'))]"
+      ]
+    }
+  ]
+}
