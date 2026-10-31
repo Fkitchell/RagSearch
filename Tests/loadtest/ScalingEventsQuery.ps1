@@ -1,0 +1,1 @@
+az containerapp logs show -n ragsearch-api -g ragsearch --type system --follow

@@ -13,16 +13,12 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2020-10
 
 resource RagSearchACR 'Microsoft.ContainerRegistry/registries@2025-11-01' = {
   name: 'ragsearch${uniqueString(resourceGroup().id)}'
-  location: location
+  location: location  
   sku: {
     name: 'Basic'
   }
   properties: {
     dataEndpointEnabled: false
-    encryption: {
-      status: 'enabled'
-      keyVaultProperties: null
-    }
     networkRuleBypassAllowedForTasks: false
     adminUserEnabled: false
     roleAssignmentMode: 'LegacyRegistryPermissions'
@@ -123,7 +119,7 @@ resource ContainerApp 'Microsoft.App/containerApps@2026-07-01' = {
       containers: [
         {
           name: 'ragsearch-container'
-          image: '${RagSearchACR.properties.loginServer}/ragsearch-api:latest'
+          image: '${RagSearchACR.properties.loginServer}/ragsearch-api:a3ad64a'
           probes: [
             {
               type: 'Liveness'
