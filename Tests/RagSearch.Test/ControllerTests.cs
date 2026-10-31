@@ -31,13 +31,10 @@ public class ControllerTests
     }
 
     [Fact]
-    public async Task HealthTest()
+    public Task HealthTest()
     {
         // arrange
         var healthController = new HealthController();
-        var versionInfo = Assembly.GetEntryAssembly()?
-            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
-            .InformationalVersion;
 
         // act
         var result = await healthController.Index();
@@ -45,7 +42,8 @@ public class ControllerTests
         //assert
 
         var actionResult = Assert.IsAssignableFrom<OkObjectResult>(result);
-        Assert.Equivalent(actionResult.Value, new { Status = "Healthy", BuildVersion = versionInfo });
-
+        Assert.Equal(expected: 200, actual: actionResult.StatusCode);
+        Assert.Equal(expected: "Healthy", actual: ((dynamic)actionResult.Value).Status);
+        Assert.NotEmpty(((dynamic)actionResult.Value).BuildVersion);
     }
 }

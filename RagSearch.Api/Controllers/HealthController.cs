@@ -10,10 +10,11 @@ namespace RagSearch.Api.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            var versionInfo = Assembly.GetEntryAssembly()?
-                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
-                .InformationalVersion;
-            
+            var versionInfo = typeof(HealthController)
+            .Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+            .InformationalVersion;
+
             return Ok(new
             {
                 Status = "Healthy",

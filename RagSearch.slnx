@@ -1,4 +1,4 @@
 <Solution>
   <Project Path="RagSearch.Api/RagSearch.Api.csproj" Id="a7cef45b-277d-4e9c-b11c-d4b9e465ab18" />
-  <Project Path="RagSearch.Test/RagSearch.Test.csproj" Id="dace5467-33ee-49c2-b947-dfa71bf5218f" />
+  <Project Path="Tests/RagSearch.Test/RagSearch.Test.csproj" Id="dace5467-33ee-49c2-b947-dfa71bf5218f" />
 </Solution>
