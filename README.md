@@ -26,7 +26,7 @@ classDef planned stroke-dasharray: 5 5
 classDef partial stroke-width:3px,stroke:orange
 
 class API partial
-class Cosmos,Inval,Redis,Client,SB,PG,FN planned
+class Cosmos,Inval,Redis,Client,SB,PG,Fn planned
 
 subgraph legend
     direction TB
