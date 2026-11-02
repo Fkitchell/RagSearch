@@ -93,7 +93,7 @@ Currently I have a manual deployment process, which will be moved to a CI/CD pip
 
 ### Scaling Test
 
-I executed a load test to validate the scaling rules. See <a href='Tests/loadtest'> the scripts </a> or <a href='./Tests/loadtest/results'> the results</a>).
+I executed a load test to validate the scaling rules. See <a href='Tests/loadtest'> the scripts </a> or <a href='Tests/loadtest/results'> the results</a>).
 <img src='Docs/ReplicaCount.png'/>
 <img src='Docs/Requests.png'/>
 
