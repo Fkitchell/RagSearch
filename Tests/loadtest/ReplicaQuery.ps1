@@ -12,7 +12,7 @@
             throw "Azure CLI replica query failed with exit code $LASTEXITCODE."
         }
 
-        "{0} {1}" -f (Get-Date -Format HH:mm:ss), $replicaCount.Trim()
-        Start-Sleep -Seconds 10
+        "{0}: {1}" -f (Get-Date -Format HH:mm:ss), $replicaCount.Trim()
+        Start-Sleep -Seconds 8
     }
 } | Tee-Object -FilePath Tests/loadtest/Results/replicas.log -Append

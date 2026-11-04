@@ -120,6 +120,8 @@ StyleCopReport.xml
 *_wpftmp.csproj
 *.log
 !replicas.log
+!containerlogs.log
+!system-events.log
 *.tlog
 *.vspscc
 *.vssscc
