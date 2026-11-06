@@ -65,8 +65,19 @@ Each section records what I chose (as they come up), what I rejected, and the tr
 I decided against App Service to avoid paying for a service that wouldn't need to be online 24/7. Not that this project would need an expensive sku tier, but a production service likely would which would make this a good decision to make.
 
 <!-- Scaling needs, operational overhead, and when AKS would become the better choice. -->
-<!-- ### Cosmos DB partition key 
-Chosen key, expected access pattern, why it avoids hot partitions, what queries become cross-partition. -->
+### Cosmos DB
+
+#### Partition Key
+
+I chose `/documentId` as the partition key for the chunked documents, because the id is the only value that's known in any of the cases an operation touches Cosmos - specifically, when a document is being updated/deleted. Due to this reality, the only other times that an operation interacts with CosmosDB is when making a write action to the database - write, update, or delete - all of which will be cases when we know what the `documentId` which will eliminate working cross partition in those cases. Moreover, having chunks partitioned by `documentId`.
+
+#### Potential growth opportunities
+
+- If the solution would ever need to support multiple tenants, the database could be altered to use a hierar; if this solution were to become multitenancy, then it'd be a hierarchical partition key, namely `/tenantId/documentId`. 
+
+#### Known tradeoffs
+
+- because a `documentId` isn't known at the time of a search, the vector search operation must be across all partitions and will inetivebly cost more request units.
 
 <!-- ### Why both Cosmos DB and pgvector
 An opportunity to learn on both systems, understand tradeoffs and where both options outperform the other.  -->
