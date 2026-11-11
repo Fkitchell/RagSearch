@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using RagSearch.Api.Controllers;
-using System.Reflection;
-using System.Text.Json;
 
 namespace RagSearch.Test;
 
@@ -31,7 +29,7 @@ public class ControllerTests
     }
 
     [Fact]
-    public Task HealthTest()
+    public async Task HealthTest()
     {
         // arrange
         var healthController = new HealthController();

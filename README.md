@@ -14,7 +14,6 @@ RagSearch is the retrieval layer of a retrieval-augmented generation (RAG) syste
 ---
 config:
   layout: elk
-  look: handDrawn
   theme: dark
 ---
 
@@ -65,8 +64,74 @@ Each section records what I chose (as they come up), what I rejected, and the tr
 I decided against App Service to avoid paying for a service that wouldn't need to be online 24/7. Not that this project would need an expensive sku tier, but a production service likely would which would make this a good decision to make.
 
 <!-- Scaling needs, operational overhead, and when AKS would become the better choice. -->
-<!-- ### Cosmos DB partition key 
-Chosen key, expected access pattern, why it avoids hot partitions, what queries become cross-partition. -->
+### Cosmos DB
+
+#### Schema
+
+The schema decision was driven by the access patterns I'd reasonably expect from a real system like this. They're ordered by frequency:
+
+1. Semantic search across all documents, comparing a search term against the document chunks.
+2. Reading a single document, i.e., an end user asks for the source document the LLM used for an answer.
+3. An admin UI for listing and deleting the documents stored in the database.
+4. Editing a single document.
+
+The first pattern is a cross-document search, so it fans out across partitions no matter what the partition key is. That means the partition key decision is driven by patterns two, three, and four.
+
+Using `documentId` as the partition key keeps all of a document's chunks in one logical partition. Single-batch operations on those chunks are atomic, and the write load for any one document lands on a single logical partition. It also makes pattern two a point read when the `documentId` is already known, and keeps edits and deletes (patterns three and four) scoped to one partition. The admin list in pattern three is still a cross-partition query, which is acceptable since it's low volume.
+
+``` mermaid
+---
+config:
+  layout: elk
+  theme: dark
+---
+classDiagram
+    direction LR
+
+    namespace CosmosDB_RAG_Database {
+        class SourceDocuments {
+            <<Container>>
+            +String id [Document_ID, PartitionKey]
+            +String title
+            +String sourceUri
+            +String contentHash
+            +Int activeVersion
+            +DateTime uploadedAt
+            +String author
+            +String fileType
+            +Array~String~ tags
+            +Int totalChunks
+        }
+
+        class DocumentChunks {
+            <<Container - Vector Enabled>>
+            +String id [Chunk_ID]
+            +String documentId [PartitionKey, Ref]
+            +Int chunkIndex
+            +String content
+            +Array~Float~ embedding [VectorIndex_1536d]
+            +String embeddingModel
+            +Int version
+            +Int pageNumber
+            +String sectionHeader
+            +Int tokenCount
+        }
+    }
+
+    SourceDocuments "1" ..> "many" DocumentChunks : chunked into (documentId)
+```
+
+#### Partition Key
+
+I chose `/documentId` as the partition key for the chunked documents, because the id is the only value that's known in any of the cases an operation touches Cosmos - specifically, when a document is being updated/deleted. Due to this reality, the only other times that an operation interacts with CosmosDB is when making a write action to the database - write, update, or delete - all of which will be cases when we know what the `documentId` which will eliminate working cross partition in those cases. Moreover, having chunks partitioned by `documentId`.
+
+#### Potential growth opportunities
+
+- If the solution would ever need to support multiple tenants, the database could be altered to use a hierarchical partition key namely `/tenantId/documentId`.
+
+#### Known tradeoffs
+
+- because a `documentId` isn't known at the time of a search, the vector search operation must be across all partitions and will inevitably cost more request units.
 
 <!-- ### Why both Cosmos DB and pgvector
 An opportunity to learn on both systems, understand tradeoffs and where both options outperform the other.  -->
@@ -77,7 +142,7 @@ Why event-driven invalidation instead of TTL alone; how stale reads are bounded.
 <!-- ### Service Bus over Event Grid for ingestion
 Ordering, retries, dead-lettering, and why ingestion is a work queue rather than an event notification. -->
 
-<!-- ### Managed idenAStity everywhere
+<!-- ### Managed identity everywhere
 What it removed (connection strings, secret rotation burden) and what it required. -->
 
 ## Running locally
