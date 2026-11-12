@@ -1,3 +1,5 @@
+param myPrincipalId string = '00000000-0000-0000-0000-000000000000'
+
 var location = resourceGroup().location
 
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2020-10-01' = {
@@ -13,7 +15,7 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2020-10
 
 resource RagSearchACR 'Microsoft.ContainerRegistry/registries@2025-11-01' = {
   name: 'ragsearch${uniqueString(resourceGroup().id)}'
-  location: location  
+  location: location
   sku: {
     name: 'Basic'
   }
@@ -40,6 +42,45 @@ resource RoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
     )
     principalType: 'ServicePrincipal'
     principalId: RagSearchManagedIdentity.properties.principalId
+  }
+}
+
+resource CosmosDBSQLDataContributorRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2026-03-15' = {
+  parent: CosmosDBAccount
+  name: guid(
+    RagSearchManagedIdentity.id,
+    CosmosDBAccount.name,
+    CosmosDBSqlDatabase.name,
+    'Cosmos DB Built-in Data Contributor'
+  )
+  properties: {
+    principalId: RagSearchManagedIdentity.properties.principalId
+    roleDefinitionId: resourceId(
+      'Microsoft.DocumentDB/databaseAccounts/sqlRoleDefinitions',
+      CosmosDBAccount.name,
+      '00000000-0000-0000-0000-000000000002'
+    )
+    scope: '${CosmosDBAccount.id}/dbs/${CosmosDBSqlDatabase.name}'
+  }
+}
+
+resource CosmosDBSqlDataRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2026-03-15' = {
+  parent: CosmosDBAccount
+  name: guid(
+    myPrincipalId,
+    CosmosDBAccount.name,
+    CosmosDBSqlDatabase.name,
+    CosmosDBSqlDatabase.name,
+    'Cosmos DB Built-in Data Contributor'
+  )
+  properties: {
+    principalId: myPrincipalId
+    roleDefinitionId: resourceId(
+      'Microsoft.DocumentDB/databaseAccounts/sqlRoleDefinitions',
+      CosmosDBAccount.name,
+      '00000000-0000-0000-0000-000000000002'
+    )
+    scope: '${CosmosDBAccount.id}/dbs/${CosmosDBSqlDatabase.name}'
   }
 }
 
@@ -120,6 +161,12 @@ resource ContainerApp 'Microsoft.App/containerApps@2026-07-01' = {
         {
           name: 'ragsearch-container'
           image: '${RagSearchACR.properties.loginServer}/ragsearch-api:a3ad64a'
+          env: [
+            { name: 'AZURE_CLIENT_ID', value: RagSearchManagedIdentity.properties.clientId }
+            { name: 'Cosmos__Endpoint', value: CosmosDBAccount.properties.documentEndpoint }
+            { name: 'Cosmos__DatabaseName', value: CosmosDBSqlDatabase.name }
+            { name: 'Cosmos__ContainerName', value: CosmosDBSqlContainer.name }
+          ]
           probes: [
             {
               type: 'Liveness'
@@ -166,4 +213,69 @@ resource ContainerApp 'Microsoft.App/containerApps@2026-07-01' = {
   dependsOn: [
     RoleAssignment
   ]
+}
+
+resource CosmosDBAccount 'Microsoft.DocumentDB/databaseAccounts@2026-03-15' = {
+  name: 'ragsearchcosmosdb${uniqueString(resourceGroup().id)}'
+  location: location
+  kind: 'GlobalDocumentDB'
+  properties: {
+    databaseAccountOfferType: 'Standard'
+    disableLocalAuth: true
+    locations: [
+      {
+        locationName: location
+        failoverPriority: 0
+        isZoneRedundant: false
+      }
+    ]
+    capabilities: [
+      {
+        name: 'EnableNoSQLVectorSearch'
+      }
+      {
+        name: 'EnableServerless'
+      }
+    ]
+  }
+}
+
+resource CosmosDBSqlDatabase 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2026-03-15' = {
+  parent: CosmosDBAccount
+  name: 'CosmosDB_RAG'
+  properties: {
+    resource: {
+      id: 'CosmosDB_RAG'
+    }
+  }
+}
+
+resource CosmosDBSqlContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2026-03-15' = {
+  parent: CosmosDBSqlDatabase
+  name: 'VectorSearch'
+  properties: {
+    resource: {
+      id: 'VectorSearch'
+      partitionKey: {
+        paths: ['/documentId']
+        kind: 'Hash'
+        version: 2
+      }
+      vectorEmbeddingPolicy: {
+        vectorEmbeddings: [
+          {
+            path: '/embedding'
+            dataType: 'float32'
+            distanceFunction: 'cosine'
+            dimensions: 1536
+          }
+        ]
+      }
+      indexingPolicy: {
+        includedPaths: [{ path: '/*' }]
+        excludedPaths: [{ path: '/"_etag"/?' }, { path: '/embedding/*' }]
+        vectorIndexes: [{ path: '/embedding', type: 'quantizedFlat' }]
+      }
+    }
+  }
 }

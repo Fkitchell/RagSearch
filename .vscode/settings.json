@@ -1,7 +1,11 @@
 {
     "cSpell.words": [
+        "DBSQL",
         "Inval",
+        "pergb",
         "pgvector",
+        "ragsearch",
+        "ragsearchcosmosdb",
         "reindexing"
     ],
     "dotnet.defaultSolution": "RagSearch.slnx"
