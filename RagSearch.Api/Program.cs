@@ -6,14 +6,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllers();
 
-var config = builder.Configuration
-    .AddUserSecrets<Program>()
-    .Build();
-
 builder.Services.AddSingleton(_ =>
     new CosmosClient(
-        config.GetValue<string>("CosmosDB:Endpoint")
-            ?? throw new InvalidOperationException("CosmosDB:Endpoint is not configured."),
+        builder.Configuration.GetValue<string>("Cosmos:Endpoint")
+            ?? throw new InvalidOperationException("Cosmos:Endpoint is not configured."),
         new DefaultAzureCredential(),
         new CosmosClientOptions
         {

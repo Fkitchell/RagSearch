@@ -64,12 +64,11 @@ resource CosmosDBSQLDataContributorRoleAssignment 'Microsoft.DocumentDB/database
   }
 }
 
-resource CosmosDBSqlDataRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2026-03-15' = {
+resource CosmosDBSqlDataRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2026-03-15' = if (!empty(myPrincipalId)) {
   parent: CosmosDBAccount
   name: guid(
     myPrincipalId,
     CosmosDBAccount.name,
-    CosmosDBSqlDatabase.name,
     CosmosDBSqlDatabase.name,
     'Cosmos DB Built-in Data Contributor'
   )
@@ -212,6 +211,7 @@ resource ContainerApp 'Microsoft.App/containerApps@2026-07-01' = {
   }
   dependsOn: [
     RoleAssignment
+    CosmosDBSQLDataContributorRoleAssignment
   ]
 }
 
