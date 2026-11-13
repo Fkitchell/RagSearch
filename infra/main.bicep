@@ -215,16 +215,18 @@ resource ContainerApp 'Microsoft.App/containerApps@2026-07-01' = {
   ]
 }
 
+param cosmosLocation string = 'eastus2'
+
 resource CosmosDBAccount 'Microsoft.DocumentDB/databaseAccounts@2026-03-15' = {
   name: 'ragsearchcosmosdb${uniqueString(resourceGroup().id)}'
-  location: location
+  location: cosmosLocation
   kind: 'GlobalDocumentDB'
   properties: {
     databaseAccountOfferType: 'Standard'
     disableLocalAuth: true
     locations: [
       {
-        locationName: location
+        locationName: cosmosLocation
         failoverPriority: 0
         isZoneRedundant: false
       }
