@@ -1,17 +1,23 @@
+using Azure.Identity;
 using Microsoft.Azure.Cosmos;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 builder.Services.AddControllers();
 
-var config = builder.Configuration.AddUserSecrets<Program>().Build();
-
-CosmosClient client = new(
-    config.GetValue<string>("CosmosDB:Endpoint"),
-    config.GetValue<string>("CosmosDB:PrimaryKey")
-    );
+builder.Services.AddSingleton(_ =>
+    new CosmosClient(
+        builder.Configuration.GetValue<string>("Cosmos:Endpoint")
+            ?? throw new InvalidOperationException("Cosmos:Endpoint is not configured."),
+        new DefaultAzureCredential(),
+        new CosmosClientOptions
+        {
+            SerializerOptions = new CosmosSerializationOptions
+            {
+                PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase
+            }
+        }));
 
 var app = builder.Build();
 
