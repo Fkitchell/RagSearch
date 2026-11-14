@@ -1,0 +1,25 @@
+{
+    "cSpell.words": [
+        "AOAI",
+        "DBSQL",
+        "gmtime",
+        "Inval",
+        "pergb",
+        "pgvector",
+        "ragsearch",
+        "ragsearchcosmosdb",
+        "reindexing",
+        "seedlib"
+    ],
+    "dotnet.defaultSolution": "RagSearch.slnx",
+    "python.analysis.extraPaths": [
+        "./tools/seed/seedlib"
+    ],
+    "python-envs.pythonProjects": [
+        {
+            "path": "tools/seed",
+            "envManager": "ms-python.python:venv",
+            "packageManager": "ms-python.python:pip"
+        }
+    ]
+}
