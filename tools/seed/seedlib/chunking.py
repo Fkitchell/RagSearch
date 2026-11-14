@@ -1,7 +1,7 @@
 from pathlib import Path
-from seedlib.documents import SourceDocument
 
-DOCS_DIR = Path(__file__).resolve().parent / "sample_docs"
+DOCS_DIR = Path(__file__).resolve().parent.parent / "sample_docs"
+
 
 def chunk_text(text: str, size: int, overlap: int) -> list[str]:
     if overlap >= size:
@@ -23,11 +23,8 @@ def chunk_text(text: str, size: int, overlap: int) -> list[str]:
 
     return chunked_text
 
-def load_docs() -> list[SourceDocument]:
-    files = DOCS_DIR.glob("*.txt")    
-    result = []
-    
-    for file in files:
-       result.append(SourceDocument(file.stem, file.read_text()))
-       
-    return result
+
+def load_docs() -> list[tuple[str, str]]:
+    return [
+        (f.stem, f.read_text(encoding="utf-8")) for f in sorted(DOCS_DIR.glob("*.txt"))
+    ]

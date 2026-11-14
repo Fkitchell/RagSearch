@@ -1,41 +1,34 @@
-import time
-from seedlib.documents import DocumentChunk, SourceDocument
+from datetime import datetime, timezone
 from seedlib.cosmos_client import CosmosDocsClient
 from seedlib.azure_openai_client import AzureOpenAIClient
-from seedlib.chunking import load_docs, chunk_text
+from seedlib.chunking import load_docs, chunk_text, DOCS_DIR
 
 openai_client = AzureOpenAIClient()
+cosmos = CosmosDocsClient()
 
 docs = load_docs()
-chunks = []
-embeddings = []
+if not docs:
+    raise SystemExit(f"No .txt files found in {DOCS_DIR}")
 
-for doc in docs:
-    chunks = chunk_text(doc, 500, 100)
-    embeddings = openai_client.embed(chunks)
-    print(len(embeddings))
-    cosmos_resp = CosmosDocsClient.upsert(
-        SourceDocument(
-            document_id=doc.documentId,
-            title=doc.documentId.replace("-", " "),
-            active_version=0,
-            uploaded_at=time.gmtime(),
-            author="Aesop",
-            file_type=doc.file_type,
-            total_chunks=len(chunks),
-            document_chunks=[
-                DocumentChunk(
-                    chunk_id=embedding.index,
-                    document_id=doc.document_id,
-                    content=chunks[embedding.index],
-                    embedding=embeddings,
-                    embedding_model=openai_client.embedding_model,
-                    version=0,
-                    page_number=1,
-                    section_header="",
-                    token_count=len(chunks[embedding.index]),
-                )
-                for embedding in embeddings
-            ],
+for doc_id, text in docs:
+    chunks = chunk_text(text, 500, 100)
+    vectors = openai_client.embed(chunks)
+    uploaded_at = datetime.now(timezone.utc).isoformat()
+
+    for i, (chunk, vector) in enumerate(zip(chunks, vectors, strict=True)):
+        cosmos.upsert(
+            {
+                "id": f"{doc_id}:{i}",
+                "documentId": doc_id,
+                "chunkIndex": i,
+                "title": doc_id.replace("-", " "),
+                "author": "Aesop",
+                "fileType": "txt",
+                "content": chunk,
+                "embedding": vector,
+                "embeddingModel": openai_client.embedding_model_name,
+                "version": 0,
+                "uploadedAt": uploaded_at,
+            }
         )
-    )
+    print(f"{doc_id}: upserted {len(chunks)} chunks")

@@ -1,5 +1,5 @@
 import os
-from tools.seed.package.util import chunk_text, embed
+from seedlib.chunking import chunk_text
 from azure.identity import get_bearer_token_provider, DefaultAzureCredential
 from openai import AzureOpenAI
 
