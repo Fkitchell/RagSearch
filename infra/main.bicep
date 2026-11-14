@@ -20,6 +20,9 @@ resource RagSearchACR 'Microsoft.ContainerRegistry/registries@2025-11-01' = {
     name: 'Basic'
   }
   properties: {
+    encryption: {
+      status: 'disabled'
+    }
     dataEndpointEnabled: false
     networkRuleBypassAllowedForTasks: false
     adminUserEnabled: false
@@ -32,7 +35,7 @@ resource RagSearchManagedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentit
   location: location
 }
 
-resource RoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource ACRRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(RagSearchACR.id, RagSearchManagedIdentity.id, 'acrpull')
   scope: RagSearchACR
   properties: {
@@ -45,6 +48,16 @@ resource RoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   }
 }
 
+resource OpenAIServiceRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(openAIService.id, RagSearchManagedIdentity.id, 'cognitive-services-contributor')
+  scope: openAIService
+  properties: {
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd'
+    )
+    principalType: 'ServicePrincipal'
+    principalId: RagSearchManagedIdentity.properties.principalId
 resource CosmosDBSQLDataContributorRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2026-03-15' = {
   parent: CosmosDBAccount
   name: guid(
@@ -215,6 +228,42 @@ resource ContainerApp 'Microsoft.App/containerApps@2026-07-01' = {
   ]
 }
 
+var accountName = toLower('OpenAiService${uniqueString(resourceGroup().id)}')
+
+resource openAIService 'Microsoft.CognitiveServices/accounts@2025-10-01-preview' = {
+  name: accountName
+  location: location
+  kind: 'OpenAI'
+  properties: {
+    customSubDomainName: accountName
+    disableLocalAuth: true
+  }
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${RagSearchManagedIdentity.id}': {}
+    }
+  }
+  sku: {
+    name: 'S0'
+  }
+}
+
+resource azOpenAiDeployment 'Microsoft.CognitiveServices/accounts/deployments@2025-10-01-preview' = {
+  parent: openAIService
+  name: 'ragsearch-embedding'
+  properties: {
+    model: {
+      name: 'text-embedding-3-small'
+      format: 'OpenAI'
+      version: '1'
+    }
+  }
+  sku: {
+    name: 'standard'
+    capacity: 80
+  }
+  
 param cosmosLocation string = 'eastus2'
 
 resource CosmosDBAccount 'Microsoft.DocumentDB/databaseAccounts@2026-03-15' = {

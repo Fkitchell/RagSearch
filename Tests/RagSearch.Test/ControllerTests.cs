@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using RagSearch.Api.Controllers;
+using System.Text.Json;
+using Xunit;
 
 namespace RagSearch.Test;
 
@@ -25,7 +27,7 @@ public class ControllerTests
 
         //assert
         response.EnsureSuccessStatusCode();
-        Assert.Equal(expected: "application/json; charset=utf-8", actual: response.Content.Headers.ContentType.ToString());
+        Assert.Equal(expected: "application/json; charset=utf-8", actual: response.Content.Headers.ContentType?.ToString());
     }
 
     [Fact]
@@ -38,10 +40,10 @@ public class ControllerTests
         var result = await healthController.Index();
 
         //assert
-
         var actionResult = Assert.IsAssignableFrom<OkObjectResult>(result);
         Assert.Equal(expected: 200, actual: actionResult.StatusCode);
-        Assert.Equal(expected: "Healthy", actual: ((dynamic)actionResult.Value).Status);
-        Assert.NotEmpty(((dynamic)actionResult.Value).BuildVersion);
+        var response = JsonSerializer.SerializeToElement(actionResult.Value);
+        Assert.Equal(expected: "Healthy", actual: response.GetProperty("Status").GetString());
+        Assert.NotEmpty(response.GetProperty("BuildVersion").GetString() ?? string.Empty);
     }
 }
