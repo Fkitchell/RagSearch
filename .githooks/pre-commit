@@ -1,0 +1,9 @@
+#!/bin/sh
+
+dotnet run --project "Tests/RagSearch.Test/RagSearch.Test.csproj"
+test_status=$?
+
+if [ "$test_status" -ne 0 ]; then
+  echo "Tests must pass before commit!" >&2
+  exit "$test_status"
+fi
