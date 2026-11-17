@@ -1,23 +1,27 @@
 using Azure.Identity;
-using Microsoft.Azure.Cosmos;
+using RagSearch.Api.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
 
-builder.Services.AddSingleton(_ =>
-    new CosmosClient(
-        builder.Configuration.GetValue<string>("Cosmos:Endpoint")
-            ?? throw new InvalidOperationException("Cosmos:Endpoint is not configured."),
-        new DefaultAzureCredential(),
-        new CosmosClientOptions
-        {
-            SerializerOptions = new CosmosSerializationOptions
-            {
-                PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase
-            }
-        }));
+DefaultAzureCredential azCredential = new(
+    options: new DefaultAzureCredentialOptions()
+    {
+        TenantId = builder.Configuration.GetSection("EntraId").GetValue<string>("TenantId")
+            ?? throw new InvalidOperationException("EntraId:TenantId is not configured.")
+    });
+
+builder.Services.AddCosmosDB(builder.Configuration, azCredential);
+builder.Services.AddAzOpenAi(builder.Configuration, azCredential);
+builder.Services.AddSearch();
+
+builder.Host.UseDefaultServiceProvider(o =>
+{
+    o.ValidateScopes = true;
+    o.ValidateOnBuild = true;
+});
 
 var app = builder.Build();
 

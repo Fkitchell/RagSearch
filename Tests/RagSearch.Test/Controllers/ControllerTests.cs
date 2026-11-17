@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using RagSearch.Api.Controllers;
 
-namespace RagSearch.Test;
+namespace RagSearch.Test.Controllers;
 
 public class ControllerTests
 {
