@@ -1,4 +1,6 @@
-param myPrincipalId string = '00000000-0000-0000-0000-000000000000'
+param myPrincipalId string = ''
+
+param ragsearchApiImagetag string
 
 var location = resourceGroup().location
 
@@ -58,6 +60,9 @@ resource OpenAIServiceRoleAssignment 'Microsoft.Authorization/roleAssignments@20
     )
     principalType: 'ServicePrincipal'
     principalId: RagSearchManagedIdentity.properties.principalId
+  }
+}
+
 resource CosmosDBSQLDataContributorRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2026-03-15' = {
   parent: CosmosDBAccount
   name: guid(
@@ -79,12 +84,7 @@ resource CosmosDBSQLDataContributorRoleAssignment 'Microsoft.DocumentDB/database
 
 resource CosmosDBSqlDataRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2026-03-15' = if (!empty(myPrincipalId)) {
   parent: CosmosDBAccount
-  name: guid(
-    myPrincipalId,
-    CosmosDBAccount.name,
-    CosmosDBSqlDatabase.name,
-    'Cosmos DB Built-in Data Contributor'
-  )
+  name: guid(myPrincipalId, CosmosDBAccount.name, CosmosDBSqlDatabase.name, 'Cosmos DB Built-in Data Contributor')
   properties: {
     principalId: myPrincipalId
     roleDefinitionId: resourceId(
@@ -172,12 +172,18 @@ resource ContainerApp 'Microsoft.App/containerApps@2026-07-01' = {
       containers: [
         {
           name: 'ragsearch-container'
-          image: '${RagSearchACR.properties.loginServer}/ragsearch-api:a3ad64a'
+          image: '${RagSearchACR.properties.loginServer}/ragsearch-api:${ragsearchApiImagetag}'
           env: [
             { name: 'AZURE_CLIENT_ID', value: RagSearchManagedIdentity.properties.clientId }
+            { name: 'EntraId__TenantId', value: tenant().tenantId }
             { name: 'Cosmos__Endpoint', value: CosmosDBAccount.properties.documentEndpoint }
             { name: 'Cosmos__DatabaseName', value: CosmosDBSqlDatabase.name }
             { name: 'Cosmos__ContainerName', value: CosmosDBSqlContainer.name }
+            { name: 'OpenAI__DeploymentName', value: azOpenAiDeployment.name }
+            { name: 'OpenAI__EmbeddingModelName', value: azOpenAiDeployment.properties.model.name }
+            { name: 'OpenAI__Uri', value: openAIService.properties.endpoint }
+            { name: 'RateLimit__PermitLimit', value: '50' }
+            { name: 'RateLimit__QueueLimit', value: '50' }
           ]
           probes: [
             {
@@ -223,7 +229,7 @@ resource ContainerApp 'Microsoft.App/containerApps@2026-07-01' = {
     }
   }
   dependsOn: [
-    RoleAssignment
+    ACRRoleAssignment
     CosmosDBSQLDataContributorRoleAssignment
   ]
 }
@@ -237,6 +243,7 @@ resource openAIService 'Microsoft.CognitiveServices/accounts@2025-10-01-preview'
   properties: {
     customSubDomainName: accountName
     disableLocalAuth: true
+    publicNetworkAccess: 'Enabled'
   }
   identity: {
     type: 'UserAssigned'
@@ -263,7 +270,8 @@ resource azOpenAiDeployment 'Microsoft.CognitiveServices/accounts/deployments@20
     name: 'standard'
     capacity: 80
   }
-  
+}
+
 param cosmosLocation string = 'eastus2'
 
 resource CosmosDBAccount 'Microsoft.DocumentDB/databaseAccounts@2026-03-15' = {

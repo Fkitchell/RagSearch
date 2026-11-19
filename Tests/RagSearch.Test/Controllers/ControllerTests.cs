@@ -2,9 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using RagSearch.Api.Controllers;
 using System.Text.Json;
-using Xunit;
 
-namespace RagSearch.Test;
+namespace RagSearch.Test.Controllers;
 
 public class ControllerTests
 {
