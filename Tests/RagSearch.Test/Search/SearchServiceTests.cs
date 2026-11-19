@@ -25,7 +25,7 @@ namespace RagSearch.Test.Search
             var sut = new SearchService(embeddingClient, vectorStore);
 
             // Act
-            var results = await sut.SearchAsync("hello world!", 3, null, CancellationToken.None);
+            var results = await sut.SearchAsync("hello world!", 3, CancellationToken.None, null);
 
             // Assert 
             Assert.Equal(3, results.Count);

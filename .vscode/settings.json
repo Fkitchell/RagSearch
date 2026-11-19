@@ -1,16 +1,19 @@
 {
     "cSpell.words": [
         "AOAI",
+        "buildtransitive",
         "DBSQL",
         "eastus",
         "gmtime",
+        "Imagetag",
         "Inval",
         "pergb",
         "pgvector",
         "ragsearch",
         "ragsearchcosmosdb",
         "reindexing",
-        "seedlib"
+        "seedlib",
+        "xunit"
     ],
     "dotnet.defaultSolution": "RagSearch.slnx",
     "python.analysis.extraPaths": [

@@ -12,8 +12,8 @@ namespace RagSearch.Api.VectorStore.Cosmos
         public CosmosVectorQuery(IOptions<CosmosOptions> options, CosmosClient cosmosClient)
         {
             var opt = options.Value;
-            var database = cosmosClient.GetDatabase(opt.Database);
-            _container = database.GetContainer(opt.Container);
+            var database = cosmosClient.GetDatabase(opt.DatabaseName);
+            _container = database.GetContainer(opt.ContainerName);
         }
 
         public async Task<IReadOnlyList<SearchHit>> QueryAsync(float[] vector, int top, SearchFilter? filter = null, CancellationToken cancellationToken = default)

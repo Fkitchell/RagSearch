@@ -4,9 +4,6 @@
     "parameters": {
       "cosmosLocation": {
         "value": "eastus2"
-      },
-        "myPrincipalId":  {
-            "value": "ee1f9ef0-d50a-4fbd-bef4-64d9ca9f79cf"
-        }
+      }
     }
 }

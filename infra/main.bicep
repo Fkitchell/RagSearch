@@ -1,4 +1,6 @@
-param myPrincipalId string = '00000000-0000-0000-0000-000000000000'
+param myPrincipalId string = ''
+
+param ragsearchApiImagetag string
 
 var location = resourceGroup().location
 
@@ -170,12 +172,18 @@ resource ContainerApp 'Microsoft.App/containerApps@2026-07-01' = {
       containers: [
         {
           name: 'ragsearch-container'
-          image: '${RagSearchACR.properties.loginServer}/ragsearch-api:a3ad64a'
+          image: '${RagSearchACR.properties.loginServer}/ragsearch-api:${ragsearchApiImagetag}'
           env: [
             { name: 'AZURE_CLIENT_ID', value: RagSearchManagedIdentity.properties.clientId }
+            { name: 'EntraId__TenantId', value: tenant().tenantId }
             { name: 'Cosmos__Endpoint', value: CosmosDBAccount.properties.documentEndpoint }
             { name: 'Cosmos__DatabaseName', value: CosmosDBSqlDatabase.name }
             { name: 'Cosmos__ContainerName', value: CosmosDBSqlContainer.name }
+            { name: 'OpenAI__DeploymentName', value: azOpenAiDeployment.name }
+            { name: 'OpenAI__EmbeddingModelName', value: azOpenAiDeployment.properties.model.name }
+            { name: 'OpenAI__Uri', value: openAIService.properties.endpoint }
+            { name: 'RateLimit__PermitLimit', value: '50' }
+            { name: 'RateLimit__QueueLimit', value: '50' }
           ]
           probes: [
             {

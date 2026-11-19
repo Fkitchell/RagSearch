@@ -15,8 +15,8 @@ for doc_name, text in docs:
     chunks = chunk_text(text, 500, 100)
     vectors = openai_client.embed(chunks)
     uploaded_at = datetime.now(timezone.utc).isoformat()
-    guid = str(uuid.uuid8())
-    
+    guid = str(uuid.uuid5(uuid, doc_name))
+
     for i, (chunk, vector) in enumerate(zip(chunks, vectors, strict=True)):
         cosmos.upsert(
             {

@@ -9,7 +9,7 @@ namespace RagSearch.Api.Embeddings
         public AzureOpenAiEmbeddingClient(AzureOpenAIClient azureOpenAIClient, IOptions<OpenAIOptions> openAiOptions)
         {
             var options = openAiOptions.Value;
-            _embeddingModelName = options.EmbeddingModelName;
+            _embeddingModelName = options.EmbeddingModelName ?? throw new ArgumentNullException("EmbeddingModelName value is required.");
 
             _embeddingClient = azureOpenAIClient.GetEmbeddingClient(openAiOptions.Value.DeploymentName);
         }

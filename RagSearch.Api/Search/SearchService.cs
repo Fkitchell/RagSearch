@@ -11,7 +11,10 @@ namespace RagSearch.Api.Search
         public async Task<IReadOnlyList<SearchHit>> SearchAsync(
             string query,
             int top,
-            SearchFilter searchFilter,
-            CancellationToken cancellationToken) => await _vectorStore.SearchAsync(await _embeddingClient.EmbedAsync(query, cancellationToken), top, searchFilter, cancellationToken);
+            CancellationToken cancellationToken,
+            SearchFilter? searchFilter = default) => await _vectorStore.SearchAsync(await _embeddingClient.EmbedAsync(query, cancellationToken),
+                                                                top,
+                                                                searchFilter,
+                                                                cancellationToken);
     }
 }
