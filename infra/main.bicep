@@ -58,6 +58,9 @@ resource OpenAIServiceRoleAssignment 'Microsoft.Authorization/roleAssignments@20
     )
     principalType: 'ServicePrincipal'
     principalId: RagSearchManagedIdentity.properties.principalId
+  }
+}
+
 resource CosmosDBSQLDataContributorRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2026-03-15' = {
   parent: CosmosDBAccount
   name: guid(
@@ -79,12 +82,7 @@ resource CosmosDBSQLDataContributorRoleAssignment 'Microsoft.DocumentDB/database
 
 resource CosmosDBSqlDataRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2026-03-15' = if (!empty(myPrincipalId)) {
   parent: CosmosDBAccount
-  name: guid(
-    myPrincipalId,
-    CosmosDBAccount.name,
-    CosmosDBSqlDatabase.name,
-    'Cosmos DB Built-in Data Contributor'
-  )
+  name: guid(myPrincipalId, CosmosDBAccount.name, CosmosDBSqlDatabase.name, 'Cosmos DB Built-in Data Contributor')
   properties: {
     principalId: myPrincipalId
     roleDefinitionId: resourceId(
@@ -223,7 +221,7 @@ resource ContainerApp 'Microsoft.App/containerApps@2026-07-01' = {
     }
   }
   dependsOn: [
-    RoleAssignment
+    ACRRoleAssignment
     CosmosDBSQLDataContributorRoleAssignment
   ]
 }
@@ -237,6 +235,7 @@ resource openAIService 'Microsoft.CognitiveServices/accounts@2025-10-01-preview'
   properties: {
     customSubDomainName: accountName
     disableLocalAuth: true
+    publicNetworkAccess: 'Enabled'
   }
   identity: {
     type: 'UserAssigned'
@@ -263,7 +262,8 @@ resource azOpenAiDeployment 'Microsoft.CognitiveServices/accounts/deployments@20
     name: 'standard'
     capacity: 80
   }
-  
+}
+
 param cosmosLocation string = 'eastus2'
 
 resource CosmosDBAccount 'Microsoft.DocumentDB/databaseAccounts@2026-03-15' = {

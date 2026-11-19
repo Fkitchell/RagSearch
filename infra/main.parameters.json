@@ -1,0 +1,12 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "cosmosLocation": {
+        "value": "eastus2"
+      },
+        "myPrincipalId":  {
+            "value": "ee1f9ef0-d50a-4fbd-bef4-64d9ca9f79cf"
+        }
+    }
+}

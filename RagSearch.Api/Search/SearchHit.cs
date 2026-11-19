@@ -4,7 +4,7 @@ namespace RagSearch.Api.Search
 {
     public class SearchHit
     {
-        public string DocumentId { get; set; }
+        public string? DocumentId { get; set; } 
         public int ChunkIndex { get; set; }
         public string Title { get; set; }
         public string Author { get; set; }

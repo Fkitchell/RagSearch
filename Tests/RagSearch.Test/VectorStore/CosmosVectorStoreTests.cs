@@ -11,8 +11,7 @@ public class CosmosVectorStoreTests
         var expectedHits = new[]
         {
             new SearchHit { SimilarityScore = 0.91f },
-            new SearchHit { SimilarityScore = 0.73f },
-            new SearchHit { SimilarityScore = 0.42f }
+            new SearchHit { SimilarityScore = 0.73f }
         };
         var query = new FakeCosmosVectorQuery(expectedHits);
         var vectorStore = new CosmosVectorStore(query);
@@ -32,6 +31,7 @@ public class CosmosVectorStoreTests
     {
         public Task<IReadOnlyList<SearchHit>> QueryAsync(
             float[] vector,
+            int top,
             SearchFilter? filter,
             CancellationToken cancellationToken) => Task.FromResult(hits);
     }
