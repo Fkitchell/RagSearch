@@ -52,7 +52,7 @@ jobs:
             10.0.x
 
       - name: Dotnet Test
-        run: dotnet test --configuration Release --verbosity normal
+        run: dotnet test --solution RagSearch.slnx --configuration Release --verbosity normal
 
 
   deploy-foundation:
