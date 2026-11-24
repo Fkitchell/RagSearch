@@ -1,8 +1,9 @@
+import * as names from 'names.bicep'
+
 param myPrincipalId string = ''
 
-param ragsearchApiImagetag string
-
 var location = resourceGroup().location
+var rgIdSuffix = uniqueString(resourceGroup().id)
 
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2020-10-01' = {
   name: 'RagSearchLogAnalyticsWorkspace'
@@ -16,7 +17,7 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2020-10
 }
 
 resource RagSearchACR 'Microsoft.ContainerRegistry/registries@2025-11-01' = {
-  name: 'ragsearch${uniqueString(resourceGroup().id)}'
+  name: names.RagSearchACRName(rgIdSuffix)
   location: location
   sku: {
     name: 'Basic'
@@ -50,9 +51,19 @@ resource ACRRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' 
   }
 }
 
+resource MyACRRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(RagSearchACR.id, myPrincipalId, 'owner')
+  scope: RagSearchACR
+  properties: {
+    principalId: myPrincipalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '')
+  }
+}
+
 resource OpenAIServiceRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(openAIService.id, RagSearchManagedIdentity.id, 'cognitive-services-contributor')
-  scope: openAIService
+  name: guid(OpenAIService.id, RagSearchManagedIdentity.id, 'cognitive-services-contributor')
+  scope: OpenAIService
   properties: {
     roleDefinitionId: subscriptionResourceId(
       'Microsoft.Authorization/roleDefinitions',
@@ -97,7 +108,7 @@ resource CosmosDBSqlDataRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sq
 }
 
 resource ContainerAppEnv 'Microsoft.App/managedEnvironments@2026-07-01' = {
-  name: 'RagSearchContainerAppEnv'
+  name: names.RagSearchContainerAppEnvName
   location: location
   properties: {
     appLogsConfiguration: {
@@ -124,119 +135,9 @@ resource ContainerAppEnv 'Microsoft.App/managedEnvironments@2026-07-01' = {
   }
 }
 
-resource ContainerApp 'Microsoft.App/containerApps@2026-07-01' = {
-  name: 'ragsearch-api'
-  location: location
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${RagSearchManagedIdentity.id}': {}
-    }
-  }
-  properties: {
-    workloadProfileName: 'Consumption'
-    managedEnvironmentId: ContainerAppEnv.id
-    configuration: {
-      ingress: {
-        external: true
-        targetPort: 8080
-        exposedPort: 0
-        traffic: [
-          { latestRevision: true, weight: 100 }
-        ]
-      }
-      registries: [
-        {
-          server: RagSearchACR.properties.loginServer
-          identity: RagSearchManagedIdentity.id
-        }
-      ]
-    }
-    template: {
-      scale: {
-        cooldownPeriod: 300
-        maxReplicas: 5
-        minReplicas: 0
-        pollingInterval: 30
-        rules: [
-          {
-            name: 'http-scale-rule'
-            http: {
-              metadata: {
-                concurrentRequests: '50'
-              }
-            }
-          }
-        ]
-      }
-      containers: [
-        {
-          name: 'ragsearch-container'
-          image: '${RagSearchACR.properties.loginServer}/ragsearch-api:${ragsearchApiImagetag}'
-          env: [
-            { name: 'AZURE_CLIENT_ID', value: RagSearchManagedIdentity.properties.clientId }
-            { name: 'EntraId__TenantId', value: tenant().tenantId }
-            { name: 'Cosmos__Endpoint', value: CosmosDBAccount.properties.documentEndpoint }
-            { name: 'Cosmos__DatabaseName', value: CosmosDBSqlDatabase.name }
-            { name: 'Cosmos__ContainerName', value: CosmosDBSqlContainer.name }
-            { name: 'OpenAI__DeploymentName', value: azOpenAiDeployment.name }
-            { name: 'OpenAI__EmbeddingModelName', value: azOpenAiDeployment.properties.model.name }
-            { name: 'OpenAI__Uri', value: openAIService.properties.endpoint }
-            { name: 'RateLimit__PermitLimit', value: '50' }
-            { name: 'RateLimit__QueueLimit', value: '50' }
-          ]
-          probes: [
-            {
-              type: 'Liveness'
-              httpGet: {
-                path: '/api/health'
-                port: 8080
-              }
-              initialDelaySeconds: 7
-              periodSeconds: 3
-            }
-            {
-              type: 'Readiness'
-              httpGet: {
-                path: '/api/health'
-                port: 8080
-              }
-              initialDelaySeconds: 0
-              periodSeconds: 5
-              failureThreshold: 3
-              successThreshold: 1
-              timeoutSeconds: 5
-            }
-            {
-              failureThreshold: 3
-              httpGet: {
-                path: '/api/health'
-                port: 8080
-              }
-              initialDelaySeconds: 1
-              periodSeconds: 1
-              successThreshold: 1
-              timeoutSeconds: 3
-              type: 'Startup'
-            }
-          ]
-          resources: {
-            cpu: 1
-            memory: '2Gi'
-          }
-        }
-      ]
-    }
-  }
-  dependsOn: [
-    ACRRoleAssignment
-    CosmosDBSQLDataContributorRoleAssignment
-  ]
-}
+var accountName = names.OpenAIServiceName(rgIdSuffix)
 
-var accountName = toLower('OpenAiService${uniqueString(resourceGroup().id)}')
-
-resource openAIService 'Microsoft.CognitiveServices/accounts@2025-10-01-preview' = {
+resource OpenAIService 'Microsoft.CognitiveServices/accounts@2025-10-01-preview' = {
   name: accountName
   location: location
   kind: 'OpenAI'
@@ -256,9 +157,9 @@ resource openAIService 'Microsoft.CognitiveServices/accounts@2025-10-01-preview'
   }
 }
 
-resource azOpenAiDeployment 'Microsoft.CognitiveServices/accounts/deployments@2025-10-01-preview' = {
-  parent: openAIService
-  name: 'ragsearch-embedding'
+resource AzOpenAiDeployment 'Microsoft.CognitiveServices/accounts/deployments@2025-10-01-preview' = {
+  parent: OpenAIService
+  name: names.AzOpenAiDeploymentName
   properties: {
     model: {
       name: 'text-embedding-3-small'
@@ -275,7 +176,7 @@ resource azOpenAiDeployment 'Microsoft.CognitiveServices/accounts/deployments@20
 param cosmosLocation string = 'eastus2'
 
 resource CosmosDBAccount 'Microsoft.DocumentDB/databaseAccounts@2026-03-15' = {
-  name: 'ragsearchcosmosdb${uniqueString(resourceGroup().id)}'
+  name: names.CosmosDBAccountName(rgIdSuffix)
   location: cosmosLocation
   kind: 'GlobalDocumentDB'
   properties: {
@@ -301,7 +202,7 @@ resource CosmosDBAccount 'Microsoft.DocumentDB/databaseAccounts@2026-03-15' = {
 
 resource CosmosDBSqlDatabase 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2026-03-15' = {
   parent: CosmosDBAccount
-  name: 'CosmosDB_RAG'
+  name: names.CosmosDBSqlDatabaseName
   properties: {
     resource: {
       id: 'CosmosDB_RAG'
@@ -311,7 +212,7 @@ resource CosmosDBSqlDatabase 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases
 
 resource CosmosDBSqlContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2026-03-15' = {
   parent: CosmosDBSqlDatabase
-  name: 'VectorSearch'
+  name: names.CosmosDBSqlContainerName
   properties: {
     resource: {
       id: 'VectorSearch'
