@@ -56,12 +56,10 @@ jobs:
       - name: setup dotnet
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version:
-            10.0.x
+          dotnet-version: 10.0.x
 
       - name: Dotnet Test
         run: dotnet test --solution RagSearch.slnx --configuration Release --verbosity normal
-
 
   deploy-foundation:
     if: github.ref == 'refs/heads/main'
@@ -91,6 +89,8 @@ jobs:
 
   dockerBuild:
     needs: deploy-foundation
+    outputs:
+      short_sha: ${{ steps.gh_short_sha.outputs.short_sha }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -106,6 +106,9 @@ jobs:
 
       - id: acr
         run: echo "name=$(az acr list -g RagSearch --query '[0].name' -o tsv)" >>  "$GITHUB_OUTPUT"
+
+      - id: gh_short_sha
+        run: echo "short_sha=$(${ github.sha::7 })" >> "$GITHUB_OUTPUT"
 
       - name: Build with Docker
         run: az acr build -r ${{ steps.acr.outputs.name }} -f 'RagSearch.Api/Dockerfile' -t 'ragsearch-api:${{ github.sha }}' .
@@ -134,4 +137,4 @@ jobs:
           scope: resourceGroup
           resource-group-name: RagSearch
           template-file: infra/app.bicep
-          parameters: '{ "imageTag": "${{ github.sha }}" }'
+          parameters: '{ "imageTag": "${{ needs.dockerBuild.outputs.short_sha }}" }'
