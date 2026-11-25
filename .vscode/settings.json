@@ -14,6 +14,7 @@
         "ragsearchcosmosdb",
         "reindexing",
         "seedlib",
+        "upserted",
         "xunit"
     ],
     "dotnet.defaultSolution": "RagSearch.slnx",
