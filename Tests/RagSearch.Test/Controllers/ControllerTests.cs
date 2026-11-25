@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using RagSearch.Api.Controllers;
@@ -11,7 +12,14 @@ public class ControllerTests
 
     public ControllerTests()
     {
-        _factory = new WebApplicationFactory<Program>() { };
+        _factory = new WebApplicationFactory<Program>().WithWebHostBuilder(b=> 
+        {
+            b.UseEnvironment("Testing"); 
+            b.UseSetting("EntraId:TenantId", "00000000-0000-0000-0000-000000000000");
+            b.UseSetting("OpenAI:Uri", "https://fake.openai.azure.com/");
+            b.UseSetting("Cosmos:Endpoint", "https://fake.documents.azure.com:443/");
+
+        });
     }
 
     [Theory]
@@ -22,7 +30,7 @@ public class ControllerTests
         var client = _factory.CreateClient();
 
         // act
-        var response = await client.GetAsync(url);
+        var response = await client.GetAsync(url, TestContext.Current.CancellationToken);
 
         //assert
         response.EnsureSuccessStatusCode();
