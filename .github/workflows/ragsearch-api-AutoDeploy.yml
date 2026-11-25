@@ -43,6 +43,7 @@ jobs:
           VALIDATE_JSCPD: true
           VALIDATE_DOCKERFILE_HADOLINT: true
           VALIDATE_CHECKOV: true
+          VALIDATE_BASH_EXEC: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   test:
