@@ -86,7 +86,7 @@ jobs:
           operation: create
           scope: resourceGroup
           resource-group-name: RagSearch
-          template-file: foundation.bicep
+          template-file: infra/foundation.bicep
 
   dockerBuild:
     needs: deploy-foundation
@@ -131,5 +131,5 @@ jobs:
           operation: create
           scope: resourceGroup
           resource-group-name: RagSearch
-          template-file: app.bicep
+          template-file: infra/app.bicep
           parameters: '{ "imageTag": "${{ github.sha }}" }'
