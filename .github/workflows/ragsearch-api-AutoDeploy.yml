@@ -85,6 +85,7 @@ jobs:
           type: deployment
           operation: create
           scope: resourceGroup
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           resource-group-name: RagSearch
           template-file: infra/foundation.bicep
 
@@ -129,6 +130,7 @@ jobs:
         with:
           type: deployment
           operation: create
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           scope: resourceGroup
           resource-group-name: RagSearch
           template-file: infra/app.bicep
