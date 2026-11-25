@@ -12,9 +12,9 @@ public class ControllerTests
 
     public ControllerTests()
     {
-        _factory = new WebApplicationFactory<Program>().WithWebHostBuilder(b=> 
+        _factory = new WebApplicationFactory<Program>().WithWebHostBuilder(b =>
         {
-            b.UseEnvironment("Testing"); 
+            b.UseEnvironment("Testing");
             b.UseSetting("EntraId:TenantId", "00000000-0000-0000-0000-000000000000");
             b.UseSetting("OpenAI:Uri", "https://fake.openai.azure.com/");
             b.UseSetting("Cosmos:Endpoint", "https://fake.documents.azure.com:443/");

@@ -10,9 +10,10 @@ namespace RagSearch.Test.VectorStore
         {
             var expectedHits = new[]
             {
-            new SearchHit { SimilarityScore = 0.91f },
-            new SearchHit { SimilarityScore = 0.73f }
-        };
+                new SearchHit { SimilarityScore = 0.91f },
+                new SearchHit { SimilarityScore = 0.73f },
+            };
+
             var query = new FakeCosmosVectorQuery(expectedHits);
             var vectorStore = new CosmosVectorStore(query);
 
