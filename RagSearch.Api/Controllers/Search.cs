@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using RagSearch.Api.RateLimiting;
 using RagSearch.Api.Search;
 
 namespace RagSearch.Api.Controllers
@@ -11,7 +12,7 @@ namespace RagSearch.Api.Controllers
         private readonly SearchService _searchService = searchService;
 
         [HttpGet]
-        [EnableRateLimiting("")]
+        [EnableRateLimiting(RateLimitOptions.ConcurrencyPolicy)]
         public async Task<IActionResult> Index([FromQuery] string q, [FromQuery] int top = 5, [FromBody] SearchFilter? searchFilter = default, CancellationToken cancellationToken = default)
         {
             var errorDict = new Dictionary<string, string>();

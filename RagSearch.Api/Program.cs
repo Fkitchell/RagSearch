@@ -15,13 +15,12 @@ DefaultAzureCredential azCredential = new(
         TenantId = builder.Configuration.GetSection("EntraId").GetValue<string>("TenantId")
             ?? throw new InvalidOperationException("EntraId:TenantId is not configured.")
     });
-    
-var concurrencyPolicy = "Concurrency";
+
 var rateLimitOptions = new RateLimitOptions();
 builder.Configuration.GetSection(RateLimitOptions.RateLimitSection).Bind(rateLimitOptions);
 
 builder.Services.AddRateLimiter(_ => _
-    .AddConcurrencyLimiter(policyName: concurrencyPolicy, options =>
+    .AddConcurrencyLimiter(policyName: RateLimitOptions.ConcurrencyPolicy, options =>
     {
         options.PermitLimit = rateLimitOptions.PermitLimit;
         options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;

@@ -2,8 +2,10 @@ namespace RagSearch.Api.RateLimiting
 {
     public class RateLimitOptions
     {
-        internal static readonly string RateLimitSection = "RateLimit";
-        internal readonly int PermitLimit;
-        internal readonly int QueueLimit;
+        internal const string RateLimitSection = "RateLimit";
+        internal const string ConcurrencyPolicy = "Concurrency";
+
+        public int PermitLimit { get; set; }
+        public int QueueLimit { get; set; }
     }
 }
