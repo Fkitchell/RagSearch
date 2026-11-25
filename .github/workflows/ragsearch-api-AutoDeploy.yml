@@ -36,6 +36,13 @@ jobs:
         env:
           DEFAULT_BRANCH: main
           FILTER_REGEX_EXCLUDE: .*obj/.*, .*bin/.*
+          VALIDATE_ALL_CODEBASE: false
+          VALIDATE_CSHARP: true
+          VALIDATE_GITHUB_ACTIONS: true
+          VALIDATE_GITLEAKS: true
+          VALIDATE_JSCPD: true
+          VALIDATE_DOCKERFILE_HADOLINT: true
+          VALIDATE_CHECKOV: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   test:
