@@ -1,6 +1,6 @@
 import * as names from 'names.bicep'
 
-param myPrincipalId string = ''
+param myPrincipalId string
 
 var location = resourceGroup().location
 var rgIdSuffix = uniqueString(resourceGroup().id)
@@ -51,7 +51,7 @@ resource ACRRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' 
   }
 }
 
-resource MyACRRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource MyACRRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(myPrincipalId)) {
   name: guid(RagSearchACR.id, myPrincipalId, 'owner')
   scope: RagSearchACR
   properties: {
