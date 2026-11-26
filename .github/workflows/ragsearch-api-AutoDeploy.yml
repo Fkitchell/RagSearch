@@ -127,7 +127,7 @@ jobs:
           context: .
           file: RagSearch.Api/Dockerfile
           push: true
-          tags: ${{ steps.acr.outputs.name }}.azurecr.io/ragsearch-api::${{ steps.gh_short_sha.outputs.short_sha }}
+          tags: ${{ steps.acr.outputs.name }}.azurecr.io/ragsearch-api:${{ steps.gh_short_sha.outputs.short_sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
