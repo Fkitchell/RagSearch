@@ -12,6 +12,8 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["RagSearch.Api/RagSearch.Api.csproj", "RagSearch.Api/"]
 RUN dotnet restore "./RagSearch.Api/RagSearch.Api.csproj"
+COPY . .
+WORKDIR "/src/RagSearch.Api"
 
 # This stage is used to publish the service project to be copied to the final stage
 FROM build AS publish
