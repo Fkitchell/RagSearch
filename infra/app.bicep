@@ -1,6 +1,6 @@
 import * as names from 'names.bicep'
 
-param ragsearchApiImagetag string = ''
+param imageTag string = ''
 
 param rgLocation string = ''
 
@@ -78,7 +78,7 @@ resource ContainerApp 'Microsoft.App/containerApps@2026-07-01' = {
       containers: [
         {
           name: 'ragsearch-container'
-          image: '${RagSearchACR.properties.loginServer}/ragsearch-api:${ragsearchApiImagetag}'
+          image: '${RagSearchACR.properties.loginServer}/ragsearch-api:${imageTag}'
           env: [
             { name: 'AZURE_CLIENT_ID', value: RagSearchManagedIdentity.properties.clientId }
             { name: 'EntraId__TenantId', value: tenant().tenantId }
