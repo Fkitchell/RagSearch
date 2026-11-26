@@ -111,7 +111,7 @@ jobs:
         run: echo "short_sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
       - name: Build with Docker
-        run: az acr build -r ${{ steps.acr.outputs.name }} -f 'RagSearch.Api/Dockerfile' -t 'ragsearch-api:${{ github.sha }}' .
+        run: az acr build -r ${{ steps.acr.outputs.name }} -f 'RagSearch.Api/Dockerfile' -t 'ragsearch-api:${{ steps.gh_short_sha.outputs.short_sha }}' .
 
   deploy-app:
     runs-on: ubuntu-latest
