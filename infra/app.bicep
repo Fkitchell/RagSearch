@@ -2,7 +2,7 @@ import * as names from 'names.bicep'
 
 param imageTag string = ''
 
-param rgLocation string = ''
+var rgLocation string = resourceGroup().location
 
 var rgIdSuffix = uniqueString(resourceGroup().id)
 
@@ -85,7 +85,7 @@ resource ContainerApp 'Microsoft.App/containerApps@2026-07-01' = {
             { name: 'Cosmos__Endpoint', value: CosmosDBAccount.properties.documentEndpoint }
             { name: 'Cosmos__DatabaseName', value: names.CosmosDBSqlDatabaseName }
             { name: 'Cosmos__ContainerName', value: names.CosmosDBSqlContainerName }
-            { name: 'OpenAI__DeploymentName', value: OpenAIService.name }
+            { name: 'OpenAI__DeploymentName', value: azOpenAiDeployment.name }
             { name: 'OpenAI__EmbeddingModelName', value: azOpenAiDeployment.properties.model.name }
             { name: 'OpenAI__Uri', value: OpenAIService.properties.endpoint }
             { name: 'RateLimit__PermitLimit', value: '50' }
