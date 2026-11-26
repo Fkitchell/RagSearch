@@ -28,6 +28,7 @@ resource OpenAIService 'Microsoft.CognitiveServices/accounts@2025-10-01-preview'
 
 resource azOpenAiDeployment 'Microsoft.CognitiveServices/accounts/deployments@2025-10-01-preview' existing = {
   name: names.AzOpenAiDeploymentName
+  parent: OpenAIService
 }
 
 resource ContainerApp 'Microsoft.App/containerApps@2026-07-01' = {
